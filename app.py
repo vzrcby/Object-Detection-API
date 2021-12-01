@@ -1,5 +1,4 @@
 import time
-from absl import app, logging
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -14,32 +13,23 @@ import os
 # customize your API through the following parameters
 classes_path = './data/labels/coco.names'
 weights_path = './weights/yolov3.tf'
-tiny = False                    # set to True if using a Yolov3 Tiny model
-size = 416                      # size images are resized to for model
-output_path = './detections/'   # path to output folder where images with detections are saved
-num_classes = 80                # number of classes in model
+tiny = False
+size = 416
+output_path = './detections/'
+num_classes = 80
 
 # load in weights and classes
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-if len(physical_devices) > 0:
-    tf.config.experimental.set_memory_growth(physical_devices[0], True)
-
-if tiny:
-    yolo = YoloV3Tiny(classes=num_classes)
-else:
-    yolo = YoloV3(classes=num_classes)
+yolo = YoloV3(classes=num_classes)
 
 yolo.load_weights(weights_path).expect_partial()
-print('weights loaded')
-
 class_names = [c.strip() for c in open(classes_path).readlines()]
-print('classes loaded')
+
 
 # Initialize Flask application
 app = Flask(__name__)
 
 # API that returns JSON with classes found in images
-@app.route('/detections', methods=['POST'])
+@app.route('/predict', methods=['POST'])
 def get_detections():
     raw_images = []
     images = request.files.getlist("images")
@@ -51,9 +41,9 @@ def get_detections():
         img_raw = tf.image.decode_image(
             open(image_name, 'rb').read(), channels=3)
         raw_images.append(img_raw)
-        
+
     num = 0
-    
+
     # create list for final response
     response = []
 
